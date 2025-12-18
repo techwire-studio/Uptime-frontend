@@ -73,3 +73,15 @@ export type ResponseTimeStatsType = {
     response_time: number;
   }>;
 };
+
+export enum MonitorNotifyEventEnum {
+  UP = "UP",
+  DOWN = "DOWN",
+  SSL_EXPIRY = "SSL_EXPIRY",
+  DOMAIN_EXPIRY = "DOMAIN_EXPIRY",
+}
+
+export const ALERT_EVENT_OPTIONS = [
+  { label: "Down events", value: MonitorNotifyEventEnum.DOWN },
+  { label: "Up events", value: MonitorNotifyEventEnum.UP },
+];

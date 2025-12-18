@@ -7,11 +7,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
 import PulseLoader from "@/components/loader";
-import { Button } from "@/components/ui/button";
 import {
   Bell,
   Pause,
@@ -20,6 +19,7 @@ import {
   ChevronUp,
   Clock,
   Shield,
+  Play,
 } from "lucide-react";
 import { StatCard } from "@/components/monitorStatsCard";
 import {
@@ -47,6 +47,8 @@ import { ResponseTimeGraph } from "@/components/responseTimeGraph";
 import { toast } from "sonner";
 import { ChecksGraph } from "@/components/checksGraph";
 import BackButton from "@/components/backButton";
+import type { AxiosError } from "axios";
+import ButtonWithLoader from "@/components/buttonWithLoader";
 
 const fetchMonitorById = async (
   id: string
@@ -110,6 +112,8 @@ const MonitoringDashboard: React.FC = () => {
   });
 
   const [time, setTime] = useState<string | undefined>("N/A");
+  const [showMonitorStatusChangeLoader, setShowMonitorStatusChangeLoader] =
+    useState(false);
 
   useEffect(() => {
     if (!monitor?.last_checked_at) return;
@@ -122,20 +126,29 @@ const MonitoringDashboard: React.FC = () => {
   }, [monitor?.last_checked_at]);
 
   const handleMonitorStatus = async () => {
-    const { data } = await axiosInstance.patch(`monitors/${id}`, {
-      is_active: !monitor?.is_active,
-      status: monitor?.is_active
-        ? MonitorHealthStatus.PAUSED
-        : MonitorHealthStatus.PREPARING,
-    });
+    setShowMonitorStatusChangeLoader(true);
 
-    if (data.success) {
-      refetch();
-      toast.success(
-        data.data.status === MonitorHealthStatus.PAUSED
-          ? "Monitoring Paused"
-          : "Monitoring Resumed"
-      );
+    try {
+      const { data } = await axiosInstance.patch(`monitors/${id}`, {
+        is_active: !monitor?.is_active,
+        status: monitor?.is_active
+          ? MonitorHealthStatus.PAUSED
+          : MonitorHealthStatus.PREPARING,
+      });
+
+      if (data.success) {
+        refetch();
+        toast.success(
+          data.data.status === MonitorHealthStatus.PAUSED
+            ? "Monitoring Paused"
+            : "Monitoring Resumed"
+        );
+      }
+    } catch (err) {
+      const error = err as unknown as AxiosError;
+      toast.error(error?.response?.statusText || "Failed to create monitor.");
+    } finally {
+      setShowMonitorStatusChangeLoader(false);
     }
   };
 
@@ -146,6 +159,7 @@ const MonitoringDashboard: React.FC = () => {
   const buttons: {
     label: string;
     icon: ReactNode;
+    showLoader?: boolean;
     onClick?: () => void;
   }[] = [
     {
@@ -154,7 +168,12 @@ const MonitoringDashboard: React.FC = () => {
     },
     {
       label: monitor?.is_active ? "Pause" : "Resume",
-      icon: <Pause size={8} className="opacity-60" />,
+      icon: monitor?.is_active ? (
+        <Pause size={8} className="opacity-60" />
+      ) : (
+        <Play size={8} className="opacity-60" />
+      ),
+      showLoader: showMonitorStatusChangeLoader,
       onClick: handleMonitorStatus,
     },
     {
@@ -218,15 +237,19 @@ const MonitoringDashboard: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-white">{monitor.name}</h1>
-              <ExternalLink className="w-4 h-4 text-gray-400" />
+              <h1 className="text-xl font-bold text-white truncate max-w-2xl">
+                {monitor.name}
+              </h1>
+              <Link to={monitor.url}>
+                <ExternalLink className="w-4 h-4 text-gray-400" />
+              </Link>
             </div>
             <div className="text-sm text-gray-400">
               HTTP/S monitor for{" "}
               <a
                 target="_blank"
                 href={monitor.url}
-                className="text-green-400 underline"
+                className="text-green-400 max-w-xs underline truncate"
               >
                 {monitor.url}
               </a>
@@ -236,15 +259,14 @@ const MonitoringDashboard: React.FC = () => {
 
         <div className="flex items-center gap-2">
           {buttons.map((button, index) => (
-            <Button
+            <ButtonWithLoader
               key={index}
-              variant="outline"
+              label={button.label}
+              icon={button.icon}
               onClick={button.onClick}
+              showLoader={button.showLoader}
               className="bg-primary border-primary text-xs text-white hover:bg-transparent hover:text-white"
-            >
-              {button.icon}
-              <span>{button.label}</span>
-            </Button>
+            />
           ))}
         </div>
       </div>
@@ -275,7 +297,7 @@ const MonitoringDashboard: React.FC = () => {
                 {time}
               </div>
               <div className="text-[13px]">
-                Checked every {formatDuration(monitor.interval_seconds)}s
+                Checked every {formatDuration(monitor.interval_seconds)}
               </div>
             </StatCard>
 
@@ -365,7 +387,12 @@ const MonitoringDashboard: React.FC = () => {
                             className="border-gray-700 hover:bg-gray-800/50 transition"
                           >
                             {cells.map((cell, index) => (
-                              <TableCell key={index}>{cell.content}</TableCell>
+                              <TableCell
+                                key={index}
+                                className="truncate max-w-md"
+                              >
+                                {cell.content}
+                              </TableCell>
                             ))}
                           </TableRow>
                         );

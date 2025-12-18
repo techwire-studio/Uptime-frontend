@@ -1,7 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
 import CreateNewMonitor from "@/components/createNewMonitor";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axiosInstance from "@/lib/axios";
 import type { CreateNewMonitorType } from "@/validations/monitor";
 import { toast } from "sonner";
@@ -12,10 +10,15 @@ import {
   type RawMonitorsType,
 } from "@/types/monitor";
 import { useEffect, useState } from "react";
+import type { AxiosError } from "axios";
+import PulseLoader from "@/components/loader";
+import { useAuth } from "@/hooks/use-auth";
+import BackButton from "@/components/backButton";
 
 export default function CreateMonitorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
   const action = searchParams.get("action") as MonitorCreationEnum;
   const id = searchParams.get("id") as string;
@@ -27,6 +30,7 @@ export default function CreateMonitorPage() {
     | undefined
   >(undefined);
   const [loading, setLoading] = useState(false);
+  const [apiCallLoader, setApiCallLoader] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -47,35 +51,51 @@ export default function CreateMonitorPage() {
   }, [id]);
 
   const createNewMonitor = async (payload: CreateNewMonitorType) => {
-    const { data } = await axiosInstance.post("/monitors/new", {
-      name: payload.url,
-      url: payload.url,
-      interval_seconds: payload.interval,
-      alert_channels: payload.notifications,
-      tags: payload.tags,
-      type: "https",
-      workspace_id: "1",
-    });
+    setApiCallLoader(true);
 
-    if (data.success) {
-      toast.success("Monitor created successfully!");
-      navigate(Routes.MONITORS);
-    } else {
-      toast.error("Failed to create monitor.");
+    try {
+      const { data } = await axiosInstance.post("/monitors/new", {
+        name: payload.url,
+        url: payload.url,
+        interval_seconds: payload.interval,
+        alert_channels: payload.notifications,
+        tags: payload.tags,
+        type: "https",
+        workspace_id: user?.workspaceId,
+      });
+
+      if (data.success) {
+        toast.success("Monitor created successfully!");
+        navigate(`/monitor/${data.data.id}`);
+      }
+    } catch (err) {
+      const error = err as unknown as AxiosError;
+      toast.error(error?.response?.statusText || "Failed to create monitor.");
+    } finally {
+      setApiCallLoader(false);
     }
   };
 
   const editMonitor = async (payload: CreateNewMonitorType) => {
-    const { data } = await axiosInstance.patch(`monitors/${id}`, {
-      name: payload.url,
-      url: payload.url,
-      interval_seconds: payload.interval,
-      tags: payload.tags,
-    });
+    setApiCallLoader(true);
 
-    if (data.success) {
-      toast.success("Monitor edited successfully!");
-      navigate(Routes.MONITORS);
+    try {
+      const { data } = await axiosInstance.patch(`monitors/${id}`, {
+        name: payload.url,
+        url: payload.url,
+        interval_seconds: payload.interval,
+        tags: payload.tags,
+      });
+
+      if (data.success) {
+        toast.success("Monitor edited successfully!");
+        navigate(Routes.MONITORS);
+      }
+    } catch (err) {
+      const error = err as AxiosError;
+      toast.error(error?.response?.statusText || "Failed to edit monitor.");
+    } finally {
+      setApiCallLoader(false);
     }
   };
 
@@ -90,7 +110,7 @@ export default function CreateMonitorPage() {
       action === MonitorCreationEnum.CLONE) &&
     loading
   ) {
-    return <div className="text-white">Loading monitor...</div>;
+    return <PulseLoader />;
   }
 
   if (action === MonitorCreationEnum.EDIT && !loading && !monitor) {
@@ -98,24 +118,16 @@ export default function CreateMonitorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
+    <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="flex flex-col gap-4 mb-6">
-        <Link to={Routes.MONITORS}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-max flex items-center gap-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Monitoring
-          </Button>
-        </Link>
+        <BackButton label="Monitoring" />
         <h1 className="text-2xl font-bold">
           {action === "edit" ? "Edit" : "Add Single"} Monitor
         </h1>
       </div>
       <CreateNewMonitor
         monitor={monitor}
+        showLoader={apiCallLoader}
         action={action}
         onSubmit={handleFormSubmit}
       />

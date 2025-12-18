@@ -7,7 +7,7 @@ const BackButton = ({ routeTo = Routes.MONITORS, label = "Monitors" }) => {
   return (
     <Link to={routeTo}>
       <Button className="my-4 bg-primary border-primary text-xs text-white hover:bg-gray-700">
-        <ArrowLeft size={16} />
+        <ArrowLeft size={14} />
         <div className="text-sm">{label}</div>
       </Button>
     </Link>

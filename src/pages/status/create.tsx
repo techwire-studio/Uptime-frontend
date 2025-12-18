@@ -10,6 +10,7 @@ import {
   type StatusPageMonitorsList,
 } from "@/types/status";
 import { useQuery } from "@tanstack/react-query";
+import type { AxiosError } from "axios";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -38,6 +39,7 @@ const CreateStatusPage = () => {
   const action = searchParams.get("action") as MonitorCreationEnum;
   const id = searchParams.get("id") as string;
   const [loading, setLoading] = useState(false);
+  const [showCreateLoader, setShowCreateLoader] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -78,33 +80,53 @@ const CreateStatusPage = () => {
   if (!response?.success) return <div>Error loading monitors.</div>;
 
   const createStatusPage = async (settings: GlobalSettingsType) => {
-    const { data } = await axiosInstance.post("/status", {
-      monitor_ids: selectedMonitors.map((monitor) => monitor.id),
-      name: settings.name,
-      workspace_id: "69ab2717-c9a7-4359-a254-91bcb0d12e12",
-      custom_domain: settings.domain || null,
-    });
+    setShowCreateLoader(true);
 
-    if (data.success) {
-      toast.success("Status Page created successfully!");
-      navigate(Routes.STATUS);
-    } else {
-      toast.error("Failed to create status page.");
+    try {
+      const { data } = await axiosInstance.post("/status", {
+        monitor_ids: selectedMonitors.map((monitor) => monitor.id),
+        name: settings.name,
+        workspace_id: "48887638-811f-4da5-be2c-8eac554fc01f",
+        custom_domain: settings.domain || null,
+      });
+
+      if (data.success) {
+        toast.success("Status Page created successfully!");
+        navigate(Routes.STATUS);
+      }
+    } catch (err) {
+      const error = err as unknown as AxiosError;
+      toast.error(
+        error?.response?.statusText || "Failed to create status page."
+      );
+    } finally {
+      setShowCreateLoader(false);
     }
   };
 
   const editStatusPage = async (settings: GlobalSettingsType) => {
-    const { data } = await axiosInstance.patch(`status/${id}`, {
-      monitor_ids: selectedMonitors.map((monitor) => monitor.id),
-      name: settings.name,
-      custom_domain: settings.domain || null,
-    });
+    setShowCreateLoader(true);
 
-    if (data.success) {
-      toast.success("Status Page created successfully!");
-      navigate(Routes.STATUS);
-    } else {
-      toast.error("Failed to create status page.");
+    try {
+      const { data } = await axiosInstance.patch(`status/${id}`, {
+        monitor_ids: selectedMonitors.map((monitor) => monitor.id),
+        name: settings.name,
+        custom_domain: settings.domain || null,
+      });
+
+      if (data.success) {
+        toast.success("Status Page updated successfully!");
+        navigate(Routes.STATUS);
+      } else {
+        toast.error("Failed to update status page.");
+      }
+    } catch (err) {
+      const error = err as AxiosError;
+      toast.error(
+        error?.response?.statusText || "Failed to update status page."
+      );
+    } finally {
+      setShowCreateLoader(false);
     }
   };
 
@@ -117,7 +139,7 @@ const CreateStatusPage = () => {
   const monitors = response.data;
 
   if (action === MonitorCreationEnum.EDIT && loading) {
-    return <div className="text-white">Loading status page...</div>;
+    return <PulseLoader />;
   }
 
   return (
@@ -139,6 +161,7 @@ const CreateStatusPage = () => {
             selectedMonitors={selectedMonitors}
             onFinish={handleFormSubmit}
             statusPage={statusPage}
+            showLoader={showCreateLoader}
           />
         )}
       </div>

@@ -1,5 +1,5 @@
 import { Slider } from "@/components/ui/slider";
-import { roundToHundreds } from "@/lib/utils";
+import { roundValue } from "@/lib/utils";
 
 const marks = [
   { label: "30s", value: 30 },
@@ -67,7 +67,7 @@ export default function IntervalSlider({
     const realValue = Math.round(uiToReal(pct));
 
     onChange({
-      value: roundToHundreds(realValue),
+      value: roundValue(realValue),
       label: formatLabel(realValue),
     });
   };

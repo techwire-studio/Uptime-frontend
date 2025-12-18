@@ -1,3 +1,4 @@
+import { DAY_MS } from "@/constants";
 import type {
   MonitorIncidentSummaryType,
   RawIncidentType,
@@ -229,7 +230,15 @@ export const buildMonitorStats = (monitors: RawMonitorsType[]) => {
     ? ((successfulChecks / totalChecks) * 100).toFixed(2) + "%"
     : "N/A";
 
-  const withoutIncident = totalIncidents > 0 ? "0d" : "1d";
+  const incidentTimeMs = calculateIncidentTime(monitors);
+  const withoutIncidentMs = Math.max(DAY_MS - incidentTimeMs, 0);
+
+  const hours = Math.floor(withoutIncidentMs / (60 * 60 * 1000));
+  const minutes = Math.floor(
+    (withoutIncidentMs % (60 * 60 * 1000)) / (60 * 1000)
+  );
+
+  const withoutIncident = `${hours}h ${minutes}m`;
 
   return {
     up,
@@ -263,4 +272,39 @@ export const prepareChecksGraphData = (
       date: check.checked_at,
       success: check.success,
     }));
+};
+
+const calculateIncidentTime = (monitors: RawMonitorsType[]) => {
+  const now = Date.now();
+  const windowStart = now - DAY_MS;
+  let totalIncidentTime = 0;
+
+  for (const monitor of monitors) {
+    if (!monitor.checks || monitor.checks.length === 0) continue;
+
+    const checks = monitor.checks
+      .map((c) => ({ ...c, time: new Date(c.checked_at).getTime() }))
+      .sort((a, b) => a.time - b.time);
+
+    let incidentStart: number | null = null;
+
+    for (const check of checks) {
+      if (check.time < windowStart) continue;
+
+      if (!check.success && incidentStart === null) {
+        incidentStart = Math.max(check.time, windowStart);
+      }
+
+      if (check.success && incidentStart !== null) {
+        totalIncidentTime += check.time - incidentStart;
+        incidentStart = null;
+      }
+    }
+
+    if (incidentStart !== null) {
+      totalIncidentTime += now - incidentStart;
+    }
+  }
+
+  return totalIncidentTime;
 };

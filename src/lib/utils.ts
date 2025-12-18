@@ -15,7 +15,8 @@ export const getPastDateISO = (days: number): string => {
   return date.toISOString();
 };
 
-export const roundToHundreds = (v: number) => Math.round(v / 100) * 100;
+export const roundValue = (v: number) =>
+  v < 100 ? Math.floor(v / 10) * 10 : Math.floor(v / 100) * 100;
 
 /**
  * Formats time since last check as "Xm Ys ago"

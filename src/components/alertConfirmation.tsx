@@ -11,44 +11,52 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface AlertProps {
-  /** Whether the alert dialog is open */
   open: boolean;
-  /** Title of the alert dialog */
   title: string;
-  /** Description text of the alert dialog */
   description: string;
-  /** Function to call when the primary action is clicked */
+  children?: React.ReactNode;
   onConfirm: () => void;
-  /** Function to call when cancel is clicked */
   onCancel?: () => void;
-  /** Label for the primary action button */
   confirmText?: string;
-  /** Label for the cancel button */
   cancelText?: string;
+  isConfirmButtonDisabled?: boolean;
 }
 
-/**
- * Reusable alert dialog component
- */
 const Alert: React.FC<AlertProps> = ({
   open,
   title,
   description,
+  children,
   onConfirm,
   onCancel,
-  confirmText = "Continue",
+  confirmText = "Delete",
   cancelText = "Cancel",
+  isConfirmButtonDisabled = false,
 }) => {
   return (
     <AlertDialog open={open}>
-      <AlertDialogContent>
+      <AlertDialogContent className="rounded-lg p-6">
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <AlertDialogTitle className="text-lg font-semibold">
+            {title}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-white mt-2">
+            {description}
+          </AlertDialogDescription>
+          {children && <>{children}</>}
         </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
+        <AlertDialogFooter className="flex gap-2">
+          <AlertDialogCancel
+            onClick={onCancel}
+            className="flex-1 py-2 text-center rounded "
+          >
+            {cancelText}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            disabled={isConfirmButtonDisabled}
+            onClick={onConfirm}
+            className="flex-1 py-2 text-center rounded bg-red-600 text-white hover:bg-red-700 transition"
+          >
             {confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>

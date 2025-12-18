@@ -9,11 +9,13 @@ import type {
   RawStatusPagesType,
   StatusPageMonitorsList,
 } from "@/types/status";
+import ButtonWithLoader from "./buttonWithLoader";
 
 interface GlobalSettingsStepProps {
   onFinish: (settings: GlobalSettingsType) => void;
   onBack: () => void;
   selectedMonitors: StatusPageMonitorsList[];
+  showLoader: boolean;
   statusPage:
     | (RawStatusPagesType & { monitors: StatusPageMonitorsList[] })
     | null;
@@ -22,6 +24,7 @@ interface GlobalSettingsStepProps {
 export default function GlobalSettingsStep({
   onFinish,
   onBack,
+  showLoader,
   statusPage,
 }: GlobalSettingsStepProps) {
   const [name, setName] = useState(statusPage?.name || "");
@@ -215,13 +218,14 @@ export default function GlobalSettingsStep({
       </div>
 
       <div className="mt-12">
-        <Button
-          onClick={handleFinish}
+        <ButtonWithLoader
+          type="submit"
           disabled={!name}
-          className="bg-(--blue-color) text-white px-8 py-3"
-        >
-          {statusPage ? "Save Changes" : "Finish: Create status page"}
-        </Button>
+          showLoader={showLoader}
+          label={statusPage ? "Save Changes" : "Finish: Create status page"}
+          className="bg-[#2a22c7] hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-lg mt-6"
+          onClick={handleFinish}
+        />
       </div>
     </div>
   );

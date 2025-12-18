@@ -125,3 +125,21 @@
     @apply bg-primary text-primary-foreground;
   }
 }
+
+@keyframes pulse-ripple {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.pulse-loader {
+  animation: pulse-ripple 2.2s ease-out infinite;
+}

@@ -1,4 +1,5 @@
 import { ChecksGraph } from "@/components/checksGraph";
+import PulseLoader from "@/components/loader";
 import { Routes } from "@/constants";
 import axiosInstance from "@/lib/axios";
 import { prepareChecksGraphData } from "@/lib/monitor";
@@ -95,12 +96,7 @@ const PublicStatusPage = () => {
     navigate(`${Routes.PUBLIC_STATUS}/${statusPage?.id}/${id}`);
   };
 
-  if (isLoading)
-    return (
-      <div className="text-center py-20 text-xl font-semibold">
-        Loading status page…
-      </div>
-    );
+  if (isLoading) return <PulseLoader />;
 
   if (error)
     return (

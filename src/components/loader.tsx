@@ -5,35 +5,57 @@ interface PulseLoaderProps {
   size?: number;
   color?: string;
   layers?: number;
+  icon?: React.ReactNode;
+  iconSize?: number;
+  classes?: string;
 }
 
 const PulseLoader: React.FC<PulseLoaderProps> = ({
-  size = 48,
+  size = 96,
   color = "bg-green-500",
   layers = 3,
+  icon,
+  iconSize = 32,
+  classes = "min-h-screen",
 }) => {
   return (
-    <div className="relative h-full w-full flex items-center justify-center">
-      {Array.from({ length: layers }).map((_, i) => {
-        const delay = i * 50;
+    <div
+      className={cn(
+        "relative h-full w-full flex items-center justify-center",
+        classes
+      )}
+    >
+      <span
+        className={cn("absolute rounded-full", color)}
+        style={{
+          width: size,
+          height: size,
+        }}
+      />
 
-        return (
-          <div
-            key={i}
-            className={cn(
-              "absolute rounded-full opacity-75",
-              color,
-              "animate-pulse"
-            )}
-            style={{
-              width: `${size + i * 16}px`,
-              height: `${size + i * 16}px`,
-              animationDelay: `${delay}ms`,
-              animationDuration: "0.6s",
-            }}
-          ></div>
-        );
-      })}
+      {Array.from({ length: layers }).map((_, i) => (
+        <span
+          key={i}
+          className={cn("absolute rounded-full", color, "pulse-loader")}
+          style={{
+            width: size,
+            height: size,
+            animationDelay: `${i * 0.4}s`,
+          }}
+        />
+      ))}
+
+      {icon && (
+        <span
+          className="relative z-10 flex items-center justify-center"
+          style={{
+            width: iconSize,
+            height: iconSize,
+          }}
+        >
+          {icon}
+        </span>
+      )}
     </div>
   );
 };
